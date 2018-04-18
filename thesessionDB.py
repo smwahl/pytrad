@@ -297,7 +297,7 @@ class thesessionDB(object):
         with progressbar(range(N),label='Transferring tune settings from JSON to SQL') as bar:
             for i,jj in zip(bar,json_tunes):
             #for i,jj in enumerate(json_tunes):
-#                 jj = json_tunes[i]
+                 #jj = json_tunes[i]
 
                 # Fill missing with None
                 keys = ['setting','tune','abc','date','username','name','type','meter','mode']
@@ -323,7 +323,7 @@ class thesessionDB(object):
 
                 row = [j['setting'],j['tune'],j['abc'],j['date'],j['username'],j['name'],j['type'],j['meter'],j['mode']]
                 self.cur.execute('INSERT INTO settings VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL)',row)
-#                 progress(i+1,N,'Transfering tune settings from JSON to SQL.')
+                 progress(i+1,N,'Transfering tune settings from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
 
@@ -338,7 +338,7 @@ class thesessionDB(object):
         N = len(json_aliases)
         with progressbar(range(N),label='Transferring tune aliases from JSON to SQL') as bar:
             for i,j in zip(bar,json_aliases):
-#             for i,j in enumerate(json_aliases):
+            #for i,j in enumerate(json_aliases):
                 keys = ['alias','name','tune_id']
                 jj = {}
                 for x in keys:
@@ -349,7 +349,7 @@ class thesessionDB(object):
 
                 row = [startid+i,jj['alias'],jj['name'],jj['tune_id']]
                 self.cur.execute('INSERT INTO aliases VALUES (?,?,?,?)',row)
-#                 progress(i+1,N,'Transferrring aliases from JSON to SQL.')
+                 #progress(i+1,N,'Transferrring aliases from JSON to SQL.')
         self.conn.commit()
 
 
@@ -360,7 +360,7 @@ class thesessionDB(object):
 
         with progressbar(range(N),label='Transferring recordings from JSON to SQL') as bar:
             for i,j in zip(bar,json_recordings):
-#             for i,j in enumerate(json_recordings):
+             #for i,j in enumerate(json_recordings):
 
                 keys = ['id','recording','artist','track','number','tune','tune_id']
                 jj = {}
@@ -395,7 +395,7 @@ class thesessionDB(object):
 
                 row = [i,jj['id'],jj['recording'],jj['artist'],itrack,inum,jj['tune'],jj['tune_id']]
                 self.cur.execute('INSERT INTO recorded_tunes VALUES (?,?,?,?,?,?,?,?)',row)
-#                 progress(i+1,N,'Transferring recordings from JSON to SQL.')
+                 #progress(i+1,N,'Transferring recordings from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
 
@@ -403,7 +403,7 @@ class thesessionDB(object):
         N = len(json_events)
         with progressbar(range(N),label='Transferring events from JSON to SQL') as bar:
             for i,j in zip(bar,json_events):
-#             for i,j in enumerate(json_events):
+             #for i,j in enumerate(json_events):
 
                 keys = ['id','address','area','country','dtend','dtstart','event','latitude','longitude','town','venue']
                 row = [ None for x in range(len(keys))]
@@ -416,7 +416,7 @@ class thesessionDB(object):
                 #row = [j['id'],j['address'],j['area'],j['country'],j['dtend'],j['dtstart'],j['event'],
                 #      j['latitude'],j['longitude'],j['town'],j['venue']]
                 self.cur.execute('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?)',row)
-#                 progress(i+1,N,'Transfering events from JSON to SQL.')
+                 #progress(i+1,N,'Transfering events from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
 
@@ -426,7 +426,7 @@ class thesessionDB(object):
         N = len(json_sessions)
         with progressbar(range(N),label='Transferring sessions from JSON to SQL') as bar:
             for i,j in zip(bar,json_sessions):
-#             for i,j in enumerate(json_sessions):
+             #for i,j in enumerate(json_sessions):
 
                 keys = ['id','address','area','country','date','latitude','longitude','name','town']
                 row = [ None for x in range(len(keys))]
@@ -441,7 +441,7 @@ class thesessionDB(object):
                 #      j['latitude'],j['longitude'],j['name'],j['town']]
 
                 self.cur.execute('INSERT INTO sessions VALUES (?,?,?,?,?,?,?,?,?)',row)
-#                 progress(i+1,N,'Transfering sessions from JSON to SQL.')
+                 #progress(i+1,N,'Transfering sessions from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
 

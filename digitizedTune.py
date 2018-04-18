@@ -1,3 +1,6 @@
+#! /Users/swahl/anaconda/bin/python
+# coding: utf-8
+
 import pyabc
 import numpy as np
 import json
