@@ -77,7 +77,7 @@ class digitizedTune(object):
         return self.tune[n]
 
     def measure(self,np,nm):
-        assert np < self.numparts
+        assert np < self.num_parts
         assert nm < len(self.tune[np])
         return self.tune[np][nm]
 
@@ -90,6 +90,15 @@ class digitizedTune(object):
                 #print x.pitch.value, x.duration, int(np.round(x.duration / incdur))
                 ndigits = int(np.round(x.duration / self.incdur))
                 lm += [x.pitch.value + 12.*x.pitch.octave for i in range(ndigits)]
+            elif isinstance(x,pyabc.Rest):
+                try:
+                    denom = float(x.length[1])
+                except:
+                    denom = 1.
+                num = float(x.length[0])
+                duration = num /denom
+                ndigits = int(np.round(duration / self.incdur))
+                lm += [ np.nan for i in range(ndigits)]
 
         marr = np.array(lm)
         #marr_rel_root  = marr_abs - key.root.value
@@ -102,13 +111,16 @@ class digitizedTune(object):
     def isBeam(self,x):
         return isinstance(x,pyabc.Beam)
 
+    def isRest(self,x):
+        return isinstance(x,pyabc.Rest)
+
     def simplifyTokens(self,tokens):
         '''
         Removes any elements that aren't notes or bars.
         '''
         results = []
         for t in tokens:
-            if self.isNote(t) or self.isBeam(t):
+            if self.isNote(t) or self.isBeam(t) or self.isRest(t):
                 results.append(t)
             else:
                 pass

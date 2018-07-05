@@ -134,20 +134,29 @@ class userTunes(object):
     '''
     def __init__(self,uid):
         self.user_id = int(uid)
+        self.main_url = 'https://thesession.org'
         self.tunebook_url = 'https://thesession.org/members/' + str(uid) + '/tunebook'
         self.tunesettings_url = 'https://thesession.org/members/' + str(uid) + '/tunes'
+        self.usersets_url = 'https://thesession.org/members/'+str(uid)+'/sets'
 
         self.__soup = None
         self.tunebook = []
         self.tunesettings = []
         self.settings = []
-        self.tunes = []
+        self.user_sets = []
+
+        self.continueAllPages = False
+
+        self.tmplist = []
+
 
         #self.getProfileHTML()
 
         self.getTuneBook()
         self.getTuneSettings()
+        self.getSets()
         self.combineTuneList()
+
 
     def getHTML(self,url):
         try:
@@ -167,9 +176,6 @@ class userTunes(object):
             print(url)
             self.getHTML(url)
 
-            mapping_elements = []
-            locations = []
-
             description = ''
             hrefs = self.__soup.find_all('a', href=True)
 
@@ -185,12 +191,13 @@ class userTunes(object):
 
             # see if there are additional pages.
             cont = False
-            for x in hrefs:
-                if 'next' in str(x):
-                    #print('found next')
-                    cont = True
-                    i = i+1
-                    break
+            if self.continueAllPages:
+                for x in hrefs:
+                    if 'next' in str(x):
+                        #print('found next')
+                        cont = True
+                        i = i+1
+                        break
 
             #print(self.tune_list)
 
@@ -201,9 +208,6 @@ class userTunes(object):
             url = self.tunesettings_url + '?page=' + str(i)
             print(url)
             self.getHTML(url)
-
-            mapping_elements = []
-            locations = []
 
             description = ''
             hrefs = self.__soup.find_all('a', href=True)
@@ -222,15 +226,74 @@ class userTunes(object):
 
             # see if there are additional pages.
             cont = False
+            if self.continueAllPages:
+                for x in hrefs:
+                    if 'next' in str(x):
+                        print('found next')
+                        cont = True
+                        i = i+1
+                        break
+
+    def getSets(self):
+        cont = True
+        i = 1
+        while cont:
+            url = self.usersets_url + '?page=' + str(i)
+            print(url)
+            self.getHTML(url)
+
+            description = ''
+            hrefs = self.__soup.find_all('a', href=True)
+
+            #print(hrefs)
             for x in hrefs:
-                if 'next' in str(x):
-                    #print('found next')
-                    cont = True
-                    i = i+1
-                    break
+                if '/sets/' in str(x):
+
+                    link = x['href']
+                    url = self.main_url + link
+                    set_id = url.split('/')[-1]
+                    user_id = url.split('/')[-3]
+                    print(url)
+                    self.getHTML(url)
+
+                    description = ''
+                    hrefs2 = self.__soup.find_all('a', href=True)
+
+                    set_tunes = []
+                    set_settings = []
+                    for y in hrefs2:
+                        if '/tunes/' in str(y):
+                            #print(y)
+                            tid = map(int, re.findall(r'\d+', str(y)))
+                            #print(tid)
+                            set_tunes.append(tid[0])
+                            set_settings.append(tid[1])
+
+                    new_set = { 'user_id': user_id,
+                                'set_id': set_id,
+                                'tunes': set_tunes,
+                                'settings': set_settings }
+                    self.user_sets.append(new_set)
+
+            # see if there are additional pages.
+            cont = False
+
+            if self.continueAllPages:
+                for x in hrefs:
+                    if 'next' in str(x):
+                        print('found next')
+                        cont = True
+                        i = i+1
+                        break
 
     def combineTuneList(self):
-        tlist = self.tunebook + self.tunesettings
+
+        tunesinsets = []
+
+        for s in self.user_sets:
+            tunesinsets += s['tunes']
+
+        tlist = self.tunebook + self.tunesettings + tunesinsets
         self.tunes = np.unique(tlist)
 
 

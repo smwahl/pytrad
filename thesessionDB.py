@@ -104,7 +104,8 @@ class thesessionDB(object):
             pass
 
         self.cur.execute('''CREATE TABLE users (
-            user TEXT PRIMARY KEY
+            user TEXT PRIMARY KEY,
+            location TEXT,
         )''')
         #self.conn.commit()
 
@@ -242,6 +243,22 @@ class thesessionDB(object):
             name TEXT,
             town TEXT
         )''')
+
+
+        # Create user-tunes table
+        try:
+            self.cur.execute('DROP TABLE usertunes')
+        except:
+            pass
+
+        self.cur.execute('''CREATE TABLE usertunes (
+            _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            user_id TEXT,
+            tune_id TEXT
+        )''')
+        #self.conn.commit()
+
+
         self.conn.commit()
 
 
@@ -323,7 +340,7 @@ class thesessionDB(object):
 
                 row = [j['setting'],j['tune'],j['abc'],j['date'],j['username'],j['name'],j['type'],j['meter'],j['mode']]
                 self.cur.execute('INSERT INTO settings VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL)',row)
-                 progress(i+1,N,'Transfering tune settings from JSON to SQL.')
+                #progress(i+1,N,'Transfering tune settings from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
 
