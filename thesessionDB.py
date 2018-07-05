@@ -258,6 +258,38 @@ class thesessionDB(object):
         )''')
         #self.conn.commit()
 
+        # Create user-sets table
+        try:
+            self.cur.execute('DROP TABLE usersets')
+        except:
+            pass
+
+        self.cur.execute('''CREATE TABLE usersets (
+            _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            user_id TEXT,
+            set_id TEXT,
+            tune_id TEXT,
+            setting_id TEXT,
+            number INTEGER
+        )''')
+        #self.conn.commit()
+
+        # Create artist-sets table (To be made from recordings)
+        try:
+            self.cur.execute('DROP TABLE usersets')
+        except:
+            pass
+
+        self.cur.execute('''CREATE TABLE usersets (
+            _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            artist_id TEXT,
+            recording_id TEXT,
+            set_id TEXT,
+            tune_id TEXT,
+            setting_id TEXT,
+            number INTEGER
+        )''')
+        #self.conn.commit()
 
         self.conn.commit()
 
