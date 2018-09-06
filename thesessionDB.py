@@ -105,7 +105,7 @@ class thesessionDB(object):
 
         self.cur.execute('''CREATE TABLE users (
             user TEXT PRIMARY KEY,
-            location TEXT,
+            location TEXT
         )''')
         #self.conn.commit()
 
@@ -247,11 +247,11 @@ class thesessionDB(object):
 
         # Create user-tunes table
         try:
-            self.cur.execute('DROP TABLE usertunes')
+            self.cur.execute('DROP TABLE user_tunes')
         except:
             pass
 
-        self.cur.execute('''CREATE TABLE usertunes (
+        self.cur.execute('''CREATE TABLE user_tunes (
             _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             user_id TEXT,
             tune_id TEXT
@@ -260,36 +260,38 @@ class thesessionDB(object):
 
         # Create user-sets table
         try:
-            self.cur.execute('DROP TABLE usersets')
+            self.cur.execute('DROP TABLE user_sets')
         except:
             pass
 
-        self.cur.execute('''CREATE TABLE usersets (
+        self.cur.execute('''CREATE TABLE user_sets (
             _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
             user_id TEXT,
             set_id TEXT,
             tune_id TEXT,
             setting_id TEXT,
-            number INTEGER
+            tune_position TEXT,
+            num_tunes INTEGER
         )''')
         #self.conn.commit()
 
-        # Create artist-sets table (To be made from recordings)
-        try:
-            self.cur.execute('DROP TABLE usersets')
-        except:
-            pass
+        # I think this one might not be necessary
+        ## Create artist-sets table (To be made from recordings)
+        #try:
+            #self.cur.execute('DROP TABLE artist_sets')
+        #except:
+            #pass
 
-        self.cur.execute('''CREATE TABLE usersets (
-            _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            artist_id TEXT,
-            recording_id TEXT,
-            set_id TEXT,
-            tune_id TEXT,
-            setting_id TEXT,
-            number INTEGER
-        )''')
-        #self.conn.commit()
+        #self.cur.execute('''CREATE TABLE artist_sets (
+            #_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            #set_id INTEGER,
+            #artist TEXT,
+            #recording_id TEXT,
+            #tune_id TEXT,
+            #tune_position text,
+            #num_tunes integer
+        #)''')
+        ##self.conn.commit()
 
         self.conn.commit()
 
@@ -361,7 +363,7 @@ class thesessionDB(object):
                 self.cur.execute('SELECT * FROM users WHERE (user=?)', [j['username']])
                 entry = self.cur.fetchone()
                 if entry is None:
-                    self.cur.execute('INSERT INTO users VALUES (?)', [j['username']])
+                    self.cur.execute('INSERT INTO users VALUES (?,?)', [j['username'],None])
 
                 # Check if tune is new, if so add to table
                 self.cur.execute('SELECT * FROM tunes WHERE (tune_id=?)', [j['tune']])
@@ -494,13 +496,82 @@ class thesessionDB(object):
 
         self.conn.commit()  # you must commit for it to become permanent
 
+    #def artistSetsFromRecordings(self):
+
+        #self.cur.execute('SELECT DISTINCT recording_id FROM recorded_tunes') 
+        #rids = self.cur.fetchall() # This could get really big, but I cant find a way to use 
+                                            ## multiple cursors.
+
+        ##print rids
+        #setid = 0
+
+        ## This loop is very slow
+        #with progressbar(range(len(rids)),label='Identifying artist sets from recorded tunes') as bar:
+            #for i,rid in zip(bar, rids):
+
+                ##print rid
+                
+                #self.cur.execute('SELECT * from recorded_tunes where (recording_id=?)',[rid[0]]) 
+                #rtrows = self.cur.fetchall()
+
+                #current_set = []
+
+                #for row in rtrows:
+
+                    #if len(current_set) == 0:
+                        #current_set.append(row)
+                    #else:
+                        #last = current_set[-1]
+
+                        ## tune part of the current set
+                        #if (last[4] == row[4]):
+                            #current_set.append(row)
+                        #else:
+                            ## insert entry for each tune in set
+                            #for pos,rec in enumerate(current_set):
+                                #asrow = [ setid, rec[3], rec[1], rec[7], pos, len(current_set)]
+                                #self.cur.execute('INSERT INTO artist_sets(set_id,'\
+                                #+'artist,recording_id,tune_id,tune_position,num_tunes) '\
+                                #+ 'VALUES (?,?,?,?,?,?)',asrow)
+                            #current_set = []
+                            #setid = setid+1
+
+
+    # this is exceedingly slow
+    #def artistSetsFromRecordings(self):
+
+        ## identify unique sets in recordings
+        #db.cur.execute('SELECT recording_id, track, count(number)  FROM recorded_tunes GROUP BY recording_id, track')
+        #q = db.cur.fetchall()  # fetch all the results of the query
+       
+        #N = len(q)
+        #setid = 0
+        ##with progressbar(range(N),label='Identifying artist sets from recorded tunes') as bar:
+        #for i,x in enumerate(q):
+            #print i, N
+
+            #self.cur.execute('SELECT artist, recording_id, tune_id, number FROM recorded_tunes where (recording_id=? and  track=?)', [x[0],x[1]])
+            #q2 = self.cur.fetchall()
+            #for x2 in q2:
+                #asrow = [setid] + list(x2) + [x[2]]
+                #self.cur.execute('INSERT INTO artist_sets(set_id,'\
+                #+'artist,recording_id,tune_id,tune_position,num_tunes) '\
+                #+ 'VALUES (?,?,?,?,?,?)',asrow)
+
+            #setid = setid + 1
+
+        #self.conn.commit()  # you must commit for it to become permanent
+
+
 if __name__ == "__main__":
 
-    db = thesessionDB(delete=True,download=True)
+    db = thesessionDB(delete=True,download=False)
 
     db.defineTables()
 #     db.populateTablesFromJSON(Ntest=1000)
     db.populateTablesFromJSON()
+
+    db.artistSetsFromRecordings()
 
     db.cur.execute('SELECT * FROM users LIMIT 5')
     q = db.cur.fetchall()  # fetch all the results of the query
@@ -557,3 +628,50 @@ if __name__ == "__main__":
     print 'Recorded tunes:'
     for x in q:
         print x
+
+    db.cur.execute('SELECT * FROM artist_sets where (artist=?)',[u'Altan'])
+    q = db.cur.fetchall()  # fetch all the results of the query
+    for x in q:
+        print x
+
+    #print ''
+    #print 'Altan sets:'
+    #for x in q:
+        #db.cur.execute('SELECT recording_name FROM recordings where (recording_id=?)',[x[1]])
+        #rec = db.cur.fetchone()
+        #if not x[4] is None:
+            #db.cur.execute('SELECT name FROM tunes where (tune_id=?)',[x[4]])
+            #tname = db.cur.fetchone()
+        #else:
+            #tname = None
+        #print rec,tname
+        #print x
+
+
+    #db.cur.execute('SELECT * FROM recorded_tunes where (artist=?)',[u'Altan'])
+    #q = db.cur.fetchall()  # fetch all the results of the query
+
+    #print ''
+    #print 'Altan sets:'
+    #for x in q:
+        #db.cur.execute('SELECT recording_name FROM recordings where (recording_id=?)',[x[1]])
+        #rec = db.cur.fetchone()
+        #if not x[4] is None:
+            #db.cur.execute('SELECT name FROM tunes where (tune_id=?)',[x[7]])
+            #tname = db.cur.fetchone()
+        #else:
+            #tname = None
+        #print rec,tname
+        #print x
+
+
+    #db.cur.execute('SELECT recording_id, track, count(number)  FROM recorded_tunes where (artist=?) GROUP BY recording_id, track',[u'Altan'])
+    #q = db.cur.fetchall()  # fetch all the results of the query
+    
+    #setid = 0
+    #for i,x in enumerate(q):
+        #print [x[0], x[1], x[2]]
+        #db.cur.execute('SELECT artist, recording_id, tune_id, number FROM recorded_tunes where (recording_id=? and  track=?)', [x[0],x[1]])
+        #q2 = db.cur.fetchall()
+        #for x2 in q2:
+            #print i,x2, x[2]
