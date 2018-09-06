@@ -11,7 +11,7 @@ import sqlite3  # this is the module that binds to SQLite
 # import pandas as pd  # you'll see why we can use this later
 
 # from progress import progress
-from click import progressbar
+from click import progressbar # this doesn't always work for some reason.
 
 # https://thesession.org/api
 #
