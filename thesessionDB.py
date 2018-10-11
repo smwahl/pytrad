@@ -86,7 +86,7 @@ class thesessionDB(object):
     def get_thesession_jsons(self,
             src='https://raw.githubusercontent.com/adactio/TheSession-data/master/json'):
         import urllib
-        for f in ['tunes','recordings','aliases','events','sessions']:
+        for f in ['tunes','recordings','aliases','events','sessions','sets']:
             url = src+'/'+f+'.json'
             print("Downloading "+f+" database from %s..." % url)
             try:
@@ -260,18 +260,25 @@ class thesessionDB(object):
 
         # Create user-sets table
         try:
-            self.cur.execute('DROP TABLE user_sets')
+            self.cur.execute('DROP TABLE tune_sets')
         except:
             pass
 
-        self.cur.execute('''CREATE TABLE user_sets (
+        self.cur.execute('''CREATE TABLE tune_sets (
             _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            user_id TEXT,
             set_id TEXT,
-            tune_id TEXT,
-            setting_id TEXT,
-            tune_position TEXT,
-            num_tunes INTEGER
+            user TEXT NOT NULL REFERENCES users on UPDATE CASCADE ON DELETE CASCADE,
+            username TEXT,
+            tune_position INTEGER,
+            num_tunes INTEGER,
+            setting_id TEXT KEY,
+            tune_id TEXT NOT NULL REFERENCES tunes ON UPDATE CASCADE ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            abc  TEXT,
+            date TEXT NOT NULL,
+            rhythm TEXT NOT NULL,
+            meter TEXT NOT NULL,
+            mode TEXT NOT NULL
         )''')
         #self.conn.commit()
 
@@ -302,6 +309,7 @@ class thesessionDB(object):
         self.json_aliases = json.loads(open('json/aliases.json', 'rb').read().decode('utf8'))
         self.json_events = json.loads(open('json/events.json', 'rb').read().decode('utf8'))
         self.json_sessions = json.loads(open('json/sessions.json', 'rb').read().decode('utf8'))
+        self.json_sets = json.loads(open('json/sets.json', 'rb').read().decode('utf8'))
 
     def populateTablesFromJSON(self,Ntest=None):
 
@@ -336,11 +344,19 @@ class thesessionDB(object):
         self.insertEvents(self.json_events[:N])
 
         if Ntest is None:
-            N = len(self.json_sessions)
+            n = len(self.json_sessions)
         else:
-            N = Ntest
+            n = Ntest
 
         self.insertSessions(self.json_sessions[:N])
+
+
+        if Ntest is None:
+            n = len(self.json_sets)
+        else:
+            n = Ntest
+
+        self.insertSets(self.json_sets[:N])
 
     def insertTuneSettings(self,json_tunes):
         # Insert entries from tunes.json
@@ -375,6 +391,91 @@ class thesessionDB(object):
                 row = [j['setting'],j['tune'],j['abc'],j['date'],j['username'],j['name'],j['type'],j['meter'],j['mode']]
                 self.cur.execute('INSERT INTO settings VALUES (?,?,?,?,?,?,?,?,?,NULL,NULL)',row)
                 #progress(i+1,N,'Transfering tune settings from JSON to SQL.')
+
+        self.conn.commit()  # you must commit for it to become permanent
+
+
+    def insertSets(self,json_sets):
+        # Insert entries from tunes.json
+        N = len(json_sets)
+        current_set = [];
+        with progressbar(range(N),label='Transferring tune sets from JSON to SQL') as bar:
+            for i,jj in zip(bar,json_sets):
+            #for i,jj in enumerate(json_tunes):
+                 #jj = json_tunes[i]
+
+                # Fill missing with None
+                # Is this username/member_id from the setting or the set?
+                keys = [u'username', u'settingorder', u'abc', u'tuneset', u'tune_id', 
+                        u'setting_id', u'mode', u'meter', u'member_id', u'date',
+                        u'type', u'name'];
+                j = {}
+                for x in keys:
+                    try:
+                        j.update({x:jj[x]})
+                    except:
+                        j.update({x:None})
+
+                # Check if user is new, if so add to table (can reenable this in
+                # the future)
+                self.cur.execute('SELECT * FROM users WHERE (user=?)', [j['username']])
+                entry = self.cur.fetchone()
+                if entry is None:
+                    self.cur.execute('INSERT INTO users VALUES (?,?)', [j['username'],None])
+
+                #Check if tune is new, if so add to table
+                #self.cur.execute('SELECT * FROM tunes WHERE (tune_id=?)', [j['tune']])
+                #entry = self.cur.fetchone()
+                #if entry is None:
+                    #row = [j['tune'],j['name'],j['type'],j['meter'],j['mode']]
+                    #self.cur.execute('INSERT INTO tunes VALUES (?,?,?,?,?)', row)
+
+                if len(current_set) == 0:
+                    current_set.append(j)
+                elif j['tuneset'] == current_set[-1]['tuneset']:
+                    current_set.append(j)
+                else:
+                    setlength = len(current_set)
+                    for jc in current_set:
+                        row = [ jc['tuneset'],
+                                jc['member_id'],
+                                jc['username'],
+                                int(jc['settingorder']),
+                                len(current_set), 
+                                jc['setting_id'],
+                                jc['tune_id'],
+                                jc['name'],
+                                jc['abc'],
+                                jc['date'],
+                                jc['type'],
+                                jc['meter'],
+                                jc['mode']]
+                        self.cur.execute('INSERT INTO tune_sets (set_id,user,'\
+                        + 'username,tune_position,num_tunes,setting_id,'\
+                        + 'tune_id,name,abc,date,rhythm,meter,mode) VALUES '\
+                        + '(?,?,?,?,?,?,?,?,?,?,?,?,?)',row)
+                    current_set = []
+                    current_set.append(j)
+
+            # Add final set
+            for jc in current_set:
+                row = [ jc['tuneset'],
+                        jc['member_id'],
+                        jc['username'],
+                        int(jc['settingorder']),
+                        len(current_set), 
+                        jc['setting_id'],
+                        jc['tune_id'],
+                        jc['name'],
+                        jc['abc'],
+                        jc['date'],
+                        jc['type'],
+                        jc['meter'],
+                        jc['mode']]
+            self.cur.execute('INSERT INTO tune_sets '\
+            + '(set_id,user,username,tune_position,num_tunes,setting_id,'\
+            + 'tune_id,name,abc,date,rhythm,meter,mode) VALUES '\
+            + '(?,?,?,?,?,?,?,?,?,?,?,?,?)',row)
 
         self.conn.commit()  # you must commit for it to become permanent
 
@@ -449,6 +550,7 @@ class thesessionDB(object):
                  #progress(i+1,N,'Transferring recordings from JSON to SQL.')
 
         self.conn.commit()  # you must commit for it to become permanent
+
 
     def insertEvents(self,json_events):
         N = len(json_events)
